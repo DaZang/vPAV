@@ -402,9 +402,11 @@
                                 <bannedRepositories>
                                     <allowedRepositories>
                                         <allowedRepository>https://repo.maven.apache.org/maven2</allowedRepository>
+                                        <allowedRepository>http://repo.maven.apache.org/maven2</allowedRepository>
                                     </allowedRepositories>
                                     <allowedPluginRepositories>
                                         <allowedPluginRepository>https://repo.maven.apache.org/maven2</allowedPluginRepository>
+                                        <allowedRepository>http://repo.maven.apache.org/maven2</allowedRepository>
                                     </allowedPluginRepositories>
                                 </bannedRepositories>
                             </rules>
