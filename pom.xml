@@ -403,6 +403,8 @@
                                     <allowedRepositories>
                                         <allowedRepository>https://repo.maven.apache.org/maven2</allowedRepository>
                                         <allowedRepository>http://repo.maven.apache.org/maven2</allowedRepository>
+                                        <allowedRepository>https://oss.sonatype.org/content/repositories/snapshots</allowedRepository>
+                                        <allowedRepository>https://oss.sonatype.org/service/local/staging/deploy/maven2</allowedRepository>
                                     </allowedRepositories>
                                     <allowedPluginRepositories>
                                         <allowedPluginRepository>https://repo.maven.apache.org/maven2</allowedPluginRepository>
