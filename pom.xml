@@ -401,16 +401,16 @@
                             <rules>
                                 <bannedRepositories>
                                     <allowedRepositories>
-                                        <allowedRepository>https://repo.maven.apache.org/maven2</allowedRepository>
-                                        <allowedRepository>http://repo.maven.apache.org/maven2</allowedRepository>
-                                        <allowedRepository>https://oss.sonatype.org</allowedRepository>
-                                        <allowedRepository>https://repository.apache.org</allowedRepository>
+                                        <allowedRepository>https://repo.maven.apache.org/maven2/*</allowedRepository>
+                                        <allowedRepository>http://repo.maven.apache.org/maven2/*</allowedRepository>
+                                        <allowedRepository>https://oss.sonatype.org/*</allowedRepository>
+                                        <allowedRepository>https://repository.apache.org/*</allowedRepository>
                                     </allowedRepositories>
                                     <allowedPluginRepositories>
-                                        <allowedPluginRepository>https://repo.maven.apache.org/maven2</allowedPluginRepository>
-                                        <allowedPluginRepository>http://repo.maven.apache.org/maven2</allowedPluginRepository>
-                                        <allowedPluginRepository>https://oss.sonatype.org</allowedPluginRepository>
-                                        <allowedPluginRepository>https://repository.apache.org</allowedPluginRepository>
+                                        <allowedPluginRepository>https://repo.maven.apache.org/maven2/*</allowedPluginRepository>
+                                        <allowedPluginRepository>http://repo.maven.apache.org/maven2/*</allowedPluginRepository>
+                                        <allowedPluginRepository>https://oss.sonatype.org/*</allowedPluginRepository>
+                                        <allowedPluginRepository>https://repository.apache.org/*</allowedPluginRepository>
                                     </allowedPluginRepositories>
                                 </bannedRepositories>
                             </rules>
