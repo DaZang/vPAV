@@ -404,11 +404,14 @@
                                         <allowedRepository>https://repo.maven.apache.org/maven2</allowedRepository>
                                         <allowedRepository>http://repo.maven.apache.org/maven2</allowedRepository>
                                         <allowedRepository>https://oss.sonatype.org/content/repositories/snapshots</allowedRepository>
-                                        <allowedRepository>https://oss.sonatype.org/service/local/staging/deploy/maven2</allowedRepository>
                                     </allowedRepositories>
                                     <allowedPluginRepositories>
                                         <allowedPluginRepository>https://repo.maven.apache.org/maven2</allowedPluginRepository>
-                                        <allowedRepository>http://repo.maven.apache.org/maven2</allowedRepository>
+                                        <allowedPluginRepository>http://repo.maven.apache.org/maven2
+                                        </allowedPluginRepository>
+                                        <allowedPluginRepository>
+                                            https://oss.sonatype.org/content/repositories/snapshots
+                                        </allowedPluginRepository>
                                     </allowedPluginRepositories>
                                 </bannedRepositories>
                             </rules>
@@ -457,18 +460,5 @@
         </plugins>
     </reporting>
 
-    <distributionManagement>
-        <site>
-            <id>website</id>
-            <url>file://${basedir}/docs/MavenSite</url>
-        </site>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-        </repository>
-    </distributionManagement>
+
 </project>
