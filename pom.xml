@@ -191,7 +191,7 @@
         <dependency>
             <groupId>ca.mcgill.sable</groupId>
             <artifactId>soot</artifactId>
-            <version>3.2.0</version>
+            <version>3.3.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>ca.mcgill.sable</groupId>
@@ -403,6 +403,9 @@
                                     <allowedRepositories>
                                         <allowedRepository>https://repo.maven.apache.org/maven2</allowedRepository>
                                         <allowedRepository>http://repo.maven.apache.org/maven2</allowedRepository>
+                                        <allowedRepository>https://oss.sonatype.org/content/repositories/snapshots/
+                                        </allowedRepository>
+                                        <allowedRepository>https://repository.apache.org/snapshots/</allowedRepository>
                                     </allowedRepositories>
                                     <allowedPluginRepositories>
                                         <allowedPluginRepository>https://repo.maven.apache.org/maven2
