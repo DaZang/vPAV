@@ -35,8 +35,10 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import de.viadee.bpm.vPAV.FileScanner;
 import de.viadee.bpm.vPAV.RuntimeConfig;
-import de.viadee.bpm.vPAV.constants.ConfigConstants;
-import de.viadee.bpm.vPAV.processing.model.data.BpmnElement;
+import de.viadee.bpm.vPAV.config.model.RuleSet;
+import de.viadee.bpm.vPAV.processing.code.flow.BpmnElement;
+import de.viadee.bpm.vPAV.processing.code.flow.ControlFlowGraph;
+import de.viadee.bpm.vPAV.processing.code.flow.FlowAnalysis;
 import de.viadee.bpm.vPAV.processing.model.data.ProcessVariableOperation;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
@@ -49,14 +51,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
-import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 
 public class ReachingDefinitionTest {
 
 	private static ClassLoader cl;
-	
+
 	private static final String BASE_PATH = "src/test/resources/";
 
 	@BeforeClass
@@ -73,19 +74,17 @@ public class ReachingDefinitionTest {
 	@Test
 	public void testSootReachingMethod() {
 		final String PATH = BASE_PATH + "ProcessVariablesModelCheckerTest_InitialProcessVariables.bpmn";
-		
-        // parse bpmn model
-        final BpmnModelInstance modelInstance = Bpmn.readModelFromFile(new File(PATH));
 
-        final Collection<ServiceTask> tasks = modelInstance
-                .getModelElementsByType(ServiceTask.class);
+		// parse bpmn model
+		final BpmnModelInstance modelInstance = Bpmn.readModelFromFile(new File(PATH));
 
-        final BpmnElement element = new BpmnElement(PATH, tasks.iterator().next());
-		
-		final FileScanner fileScanner = new FileScanner(new HashMap<>(), ConfigConstants.TEST_JAVAPATH);
+		final Collection<ServiceTask> tasks = modelInstance.getModelElementsByType(ServiceTask.class);
+		final ControlFlowGraph cg = new ControlFlowGraph();
+		final BpmnElement element = new BpmnElement(PATH, tasks.iterator().next(), cg, new FlowAnalysis());
+		final FileScanner fileScanner = new FileScanner(new RuleSet());
 		final ListMultimap<String, ProcessVariableOperation> variables = ArrayListMultimap.create();
 		variables.putAll(new JavaReaderStatic().getVariablesFromJavaDelegate(fileScanner,
-				"de.viadee.bpm.vPAV.delegates.TestDelegateReachingDef", element, null, null, null));
+				"de.viadee.bpm.vPAV.delegates.TestDelegateReachingDef", element, null, null, null, cg));
 		assertEquals(3, variables.asMap().size());
 	}
 }

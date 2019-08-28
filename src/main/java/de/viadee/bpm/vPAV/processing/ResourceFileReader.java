@@ -35,7 +35,11 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import de.viadee.bpm.vPAV.RuntimeConfig;
 import de.viadee.bpm.vPAV.constants.ConfigConstants;
-import de.viadee.bpm.vPAV.processing.model.data.*;
+import de.viadee.bpm.vPAV.processing.code.flow.BpmnElement;
+import de.viadee.bpm.vPAV.processing.model.data.ElementChapter;
+import de.viadee.bpm.vPAV.processing.model.data.KnownElementFieldType;
+import de.viadee.bpm.vPAV.processing.model.data.ProcessVariableOperation;
+import de.viadee.bpm.vPAV.processing.model.data.VariableOperation;
 import org.apache.commons.io.IOUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.types.Resource;
@@ -83,7 +87,7 @@ public class ResourceFileReader {
 					if (fileName.endsWith(".java"))
 						directoryScanner.setBasedir(ConfigConstants.JAVAPATH);
 					else
-						directoryScanner.setBasedir(ConfigConstants.BASEPATH);
+						directoryScanner.setBasedir(ConfigConstants.getInstance().getBasepath());
 				}
 
 				Resource s = directoryScanner.getResource(fileName);
@@ -124,9 +128,9 @@ public class ResourceFileReader {
 	 *            cleaned source code
 	 * @return found Process Variables
 	 */
-	public static ListMultimap<String, ProcessVariableOperation> searchProcessVariablesInCode(
-			final BpmnElement element, final ElementChapter chapter, final KnownElementFieldType fieldType,
-			final String fileName, final String scopeId, final String code) {
+	public static ListMultimap<String, ProcessVariableOperation> searchProcessVariablesInCode(final BpmnElement element,
+			final ElementChapter chapter, final KnownElementFieldType fieldType, final String fileName,
+			final String scopeId, final String code) {
 
 		final ListMultimap<String, ProcessVariableOperation> variables = ArrayListMultimap.create();
 		variables.putAll(searchReadProcessVariablesInCode(element, chapter, fieldType, fileName, scopeId, code));
@@ -174,7 +178,7 @@ public class ResourceFileReader {
 		while (matcherRuntimeService.find()) {
 			final String match = matcherRuntimeService.group(2);
 			variables.put(match, new ProcessVariableOperation(match, element, chapter, fieldType, fileName,
-					VariableOperation.READ, scopeId));
+					VariableOperation.READ, scopeId, element.getFlowAnalysis().getOperationCounter()));
 		}
 
 		final Pattern getVariablePatternDelegateExecution = Pattern.compile("\\.getVariable\\((\\w+)\\)");
@@ -183,7 +187,7 @@ public class ResourceFileReader {
 		while (matcherDelegateExecution.find()) {
 			final String match = matcherDelegateExecution.group(1);
 			variables.put(match, new ProcessVariableOperation(match, element, chapter, fieldType, fileName,
-					VariableOperation.READ, scopeId));
+					VariableOperation.READ, scopeId, element.getFlowAnalysis().getOperationCounter()));
 		}
 
 		return variables;
@@ -226,7 +230,7 @@ public class ResourceFileReader {
 		while (matcherPatternRuntimeService.find()) {
 			final String match = matcherPatternRuntimeService.group(2);
 			variables.put(match, new ProcessVariableOperation(match, element, chapter, fieldType, fileName,
-					VariableOperation.WRITE, scopeId));
+					VariableOperation.WRITE, scopeId, element.getFlowAnalysis().getOperationCounter()));
 		}
 
 		final Pattern setVariablePatternDelegateExecution = Pattern.compile("\\.setVariable\\((\\w+),(.*)\\)");
@@ -234,7 +238,7 @@ public class ResourceFileReader {
 		while (matcherPatternDelegateExecution.find()) {
 			final String match = matcherPatternDelegateExecution.group(1);
 			variables.put(match, new ProcessVariableOperation(match, element, chapter, fieldType, fileName,
-					VariableOperation.WRITE, scopeId));
+					VariableOperation.WRITE, scopeId, element.getFlowAnalysis().getOperationCounter()));
 		}
 
 		return variables;
@@ -278,7 +282,7 @@ public class ResourceFileReader {
 		while (matcherRuntimeService.find()) {
 			final String match = matcherRuntimeService.group(2);
 			variables.put(match, new ProcessVariableOperation(match, element, chapter, fieldType, fileName,
-					VariableOperation.DELETE, scopeId));
+					VariableOperation.DELETE, scopeId, element.getFlowAnalysis().getOperationCounter()));
 		}
 
 		final Pattern removeVariablePatternDelegateExecution = Pattern.compile("\\.removeVariable\\((\\w+)\\)");
@@ -287,7 +291,7 @@ public class ResourceFileReader {
 		while (matcherDelegateExecution.find()) {
 			final String match = matcherDelegateExecution.group(1);
 			variables.put(match, new ProcessVariableOperation(match, element, chapter, fieldType, fileName,
-					VariableOperation.DELETE, scopeId));
+					VariableOperation.DELETE, scopeId, element.getFlowAnalysis().getOperationCounter()));
 		}
 
 		return variables;

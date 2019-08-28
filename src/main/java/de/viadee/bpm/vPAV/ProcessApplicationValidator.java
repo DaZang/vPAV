@@ -32,7 +32,6 @@
 package de.viadee.bpm.vPAV;
 
 import de.viadee.bpm.vPAV.beans.BeanMappingGenerator;
-import de.viadee.bpm.vPAV.constants.ConfigConstants;
 import de.viadee.bpm.vPAV.processing.dataflow.DataFlowRule;
 import de.viadee.bpm.vPAV.processing.model.data.CheckerIssue;
 import de.viadee.bpm.vPAV.processing.model.data.CriticalityEnum;
@@ -58,12 +57,10 @@ public class ProcessApplicationValidator {
 	 * @return all issues
 	 */
 	public static Collection<CheckerIssue> findModelInconsistencies(ApplicationContext ctx) {
-
 		RuntimeConfig.getInstance().setApplicationContext(ctx);
 		RuntimeConfig.getInstance().setBeanMapping(BeanMappingGenerator.generateBeanMappingFile(ctx));
 		RuntimeConfig.getInstance().setClassLoader(ProcessApplicationValidator.class.getClassLoader());
 		Runner runner = createRunner();
-
 		return runner.getFilteredIssues();
 	}
 
@@ -75,13 +72,7 @@ public class ProcessApplicationValidator {
 	 * @return issues with status error
 	 */
 	public static Collection<CheckerIssue> findModelErrors(ApplicationContext ctx) {
-
-		RuntimeConfig.getInstance().setApplicationContext(ctx);
-		RuntimeConfig.getInstance().setBeanMapping(BeanMappingGenerator.generateBeanMappingFile(ctx));
-		RuntimeConfig.getInstance().setClassLoader(ProcessApplicationValidator.class.getClassLoader());
-		Runner runner = createRunner();
-
-		return filterErrors(runner.getFilteredIssues(), CriticalityEnum.ERROR);
+		return filterErrors(findModelInconsistencies(ctx), CriticalityEnum.ERROR);
 	}
 
 	/**
@@ -90,7 +81,6 @@ public class ProcessApplicationValidator {
 	 * @return all issues
 	 */
 	public static Collection<CheckerIssue> findModelInconsistencies() {
-
 		RuntimeConfig.getInstance().setClassLoader(ProcessApplicationValidator.class.getClassLoader());
 		Runner runner = createRunner();
 
@@ -103,11 +93,7 @@ public class ProcessApplicationValidator {
 	 * @return issues with status error
 	 */
 	public static Collection<CheckerIssue> findModelErrors() {
-
-		RuntimeConfig.getInstance().setClassLoader(ProcessApplicationValidator.class.getClassLoader());
-		Runner runner = createRunner();
-
-		return filterErrors(runner.getFilteredIssues(), CriticalityEnum.ERROR);
+		return filterErrors(findModelInconsistencies(), CriticalityEnum.ERROR);
 	}
 
 	/**
@@ -118,7 +104,6 @@ public class ProcessApplicationValidator {
 	 * @return all issues
 	 */
 	public static Collection<CheckerIssue> findModelInconsistencies(final HashMap<String, String> beanMap) {
-
 		RuntimeConfig.getInstance().setClassLoader(ProcessApplicationValidator.class.getClassLoader());
 		RuntimeConfig.getInstance().setBeanMapping(beanMap);
 		Runner runner = createRunner();
@@ -134,12 +119,7 @@ public class ProcessApplicationValidator {
 	 * @return issues with status error
 	 */
 	public static Collection<CheckerIssue> findModelErrors(final HashMap<String, String> beanMap) {
-
-		RuntimeConfig.getInstance().setClassLoader(ProcessApplicationValidator.class.getClassLoader());
-		RuntimeConfig.getInstance().setBeanMapping(beanMap);
-		Runner runner = createRunner();
-
-		return filterErrors(runner.getFilteredIssues(), CriticalityEnum.ERROR);
+		return filterErrors(findModelInconsistencies(beanMap), CriticalityEnum.ERROR);
 	}
 
 	/**
@@ -152,11 +132,22 @@ public class ProcessApplicationValidator {
 	 * @return issues with status error
 	 */
 	public static Collection<CheckerIssue> findModelErrorsFromClassloader(ClassLoader classloader) {
+		return filterErrors(findModelInconsistenciesFromClassloader(classloader), CriticalityEnum.ERROR);
+	}
 
+	/**
+	 * Find model errors without spring context. Alternative method for testing
+	 * purposes, to allow using a classloader that includes example delegates in
+	 * /src/test/java etc.
+	 *
+	 * @param classloader - ClassLoader that holds delegates etc.
+	 * @return all issues
+	 */
+	public static Collection<CheckerIssue> findModelInconsistenciesFromClassloader(ClassLoader classloader) {
 		RuntimeConfig.getInstance().setClassLoader(classloader);
 		Runner runner = createRunner();
 
-		return filterErrors(runner.getFilteredIssues(), CriticalityEnum.ERROR);
+		return runner.getFilteredIssues();
 	}
 
 	/**
@@ -169,8 +160,8 @@ public class ProcessApplicationValidator {
 	 * @return issues with status
 	 */
 	private static Collection<CheckerIssue> filterErrors(Collection<CheckerIssue> filteredIssues,
-			CriticalityEnum status) {
-		Collection<CheckerIssue> filteredErrors = new ArrayList<CheckerIssue>();
+														 CriticalityEnum status) {
+		Collection<CheckerIssue> filteredErrors = new ArrayList<>();
 
 		for (CheckerIssue issue : filteredIssues) {
 			if (issue.getClassification().equals(status)) {
@@ -189,7 +180,7 @@ public class ProcessApplicationValidator {
 		Runner runner = new Runner();
 		runner.setDataFlowRules(dataFlowRules);
 		dataFlowRules = new ArrayList<>();
-		runner.viadeeProcessApplicationValidator(ConfigConstants.JAVAPATH);
+		runner.viadeeProcessApplicationValidator();
 		return runner;
 	}
 }

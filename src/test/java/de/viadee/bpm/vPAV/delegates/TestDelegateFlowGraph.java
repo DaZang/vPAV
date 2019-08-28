@@ -29,22 +29,51 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package de.viadee.bpm.vPAV.processing;
+package de.viadee.bpm.vPAV.delegates;
 
-import com.google.common.collect.ListMultimap;
-import de.viadee.bpm.vPAV.FileScanner;
-import de.viadee.bpm.vPAV.processing.model.data.BpmnElement;
-import de.viadee.bpm.vPAV.processing.model.data.ElementChapter;
-import de.viadee.bpm.vPAV.processing.model.data.KnownElementFieldType;
-import de.viadee.bpm.vPAV.processing.model.data.ProcessVariableOperation;
+import org.camunda.bpm.engine.delegate.DelegateExecution;
+import org.camunda.bpm.engine.delegate.JavaDelegate;
 
-public interface JavaReader {
+public class TestDelegateFlowGraph implements JavaDelegate {
 
-	ListMultimap<String, ProcessVariableOperation> getVariablesFromJavaDelegate(final FileScanner fileScanner,
-			final String classFile, final BpmnElement element, final ElementChapter chapter,
-			final KnownElementFieldType fieldType, final String scopeId);
+    @Override
+    public void execute(final DelegateExecution execution) throws Exception {
 
-	ListMultimap<String, ProcessVariableOperation> getVariablesFromClass(final String className,
-			final ProcessVariablesScanner scanner, final BpmnElement element, final String resourceFilePath,
-			final EntryPoint entry);
+        int max = 3;
+        int count = 0;
+        boolean flag = false;
+
+
+        // turns out to be:
+        // execution.setVariable("0", 0);
+        // execution.setVariable("1", 1);
+        // execution.setVariable("2", 2);
+        while (count < max) {
+            execution.setVariable(Integer.toString(count), count);
+            count++;
+            flag = true;
+        }
+
+        // execution.getVariable("1");
+        final int count_var = (Integer) execution.getVariable("test");
+
+        if (flag) {
+            // execution.removeVariable("1");
+            doThis(execution, count_var);
+            System.out.println("Here");
+        }
+
+        execution.getVariable("3");
+        doThat(execution);
+
+    }
+
+    private void doThis(final DelegateExecution execution, final int count) {
+        execution.removeVariable(Integer.toString(count));
+    }
+
+    private int doThat(final DelegateExecution execution) {
+        return (Integer) execution.getVariable("3");
+    }
 }
+

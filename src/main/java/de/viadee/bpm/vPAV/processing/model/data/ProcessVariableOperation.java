@@ -31,98 +31,115 @@
  */
 package de.viadee.bpm.vPAV.processing.model.data;
 
+import de.viadee.bpm.vPAV.processing.code.flow.BpmnElement;
+
 /**
  * Represents a process variable operation with some meaningful information.
  *
  */
 public class ProcessVariableOperation {
 
-    private String name;
+	private String id;
 
-    private VariableOperation operation;
+	private String name;
 
-    private String scopeId;
+	private VariableOperation operation;
 
-    /** Detailed Information about the location of the match **/
-    private BpmnElement element;
+	private String scopeId;
 
-    private String resourceFilePath;
+	/** Detailed Information about the location of the match **/
+	private BpmnElement element;
 
-    private ElementChapter chapter;
+	private String resourceFilePath;
 
-    private KnownElementFieldType fieldType;
+	private ElementChapter chapter;
 
-    // Guaranteed that the operation takes place or not
-    private boolean operationType;
+	private KnownElementFieldType fieldType;
 
-    public ProcessVariableOperation(final String name, final BpmnElement element, final ElementChapter chapter,
-            final KnownElementFieldType fieldType, final String resourceFilePath,
-            final VariableOperation operation, final String scopeId) {
-        super();
-        this.name = name;
-        this.element = element;
-        this.resourceFilePath = resourceFilePath;
-        this.chapter = chapter;
-        this.fieldType = fieldType;
-        this.operation = operation;
-        this.scopeId = scopeId;
-    }
+	private int index;
+	// Guaranteed that the operation takes place or not
+	private boolean operationType;
 
-    public String getName() {
-        return name;
-    }
+	public ProcessVariableOperation(final String name, final BpmnElement element, final ElementChapter chapter,
+			final KnownElementFieldType fieldType, final String resourceFilePath, final VariableOperation operation,
+			final String scopeId, final int index) {
+		super();
+		this.name = name;
+		this.element = element;
+		this.resourceFilePath = resourceFilePath;
+		this.chapter = chapter;
+		this.fieldType = fieldType;
+		this.operation = operation;
+		this.scopeId = scopeId;
+		this.index = index;
+		this.id = createId();
+		element.getFlowAnalysis().incrementOperationCounter();
+	}
 
-    public String getResourceFilePath() {
-        return resourceFilePath;
-    }
+	private String createId() {
+		return CheckerIssue.getMD5(name + "_" + chapter + "_" + fieldType + "_" + resourceFilePath + "_" + operation
+				+ "_" + scopeId + "_" + System.nanoTime());
+	}
 
-    public BpmnElement getElement() {
-        return element;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public ElementChapter getChapter() {
-        return chapter;
-    }
+	public String getId() {
+		return id;
+	}
 
-    public KnownElementFieldType getFieldType() {
-        return fieldType;
-    }
+	public String getResourceFilePath() {
+		return resourceFilePath;
+	}
 
-    public VariableOperation getOperation() {
-        return operation;
-    }
+	public BpmnElement getElement() {
+		return element;
+	}
 
-    public String getScopeId() {
-        return scopeId;
-    }
+	public ElementChapter getChapter() {
+		return chapter;
+	}
 
-    public void setOperationType(boolean type) {
-        this.operationType = type;
-    }
+	public KnownElementFieldType getFieldType() {
+		return fieldType;
+	}
 
-    public boolean getOperationType() {
-        return operationType;
-    }
+	public VariableOperation getOperation() {
+		return operation;
+	}
 
-    public String toString() {
-        return name + " [" + element.getProcessDefinition() + ", " + element.getBaseElement().getId()
-                + ", Scope: " + scopeId + ", " + chapter.name() + ", " + fieldType.getDescription() + ", "
-                + resourceFilePath + "]";
-    }
+	public String getScopeId() {
+		return scopeId;
+	}
 
-    @Override
-    public int hashCode() {
-        return name.hashCode();
-    }
+	public void setScopeId(String scopeId) {
+		this.scopeId = scopeId;
+	}
 
-    @Override
-    public boolean equals(final Object o) {
-        if (o instanceof ProcessVariableOperation) {
-            final ProcessVariableOperation p = (ProcessVariableOperation) o;
-            if (name.equals(p.getName())) {
-                return true;
-            }
-        }
-        return false;
-    }
+	public void setOperationType(boolean type) {
+		this.operationType = type;
+	}
+
+	public boolean getOperationType() {
+		return operationType;
+	}
+
+	public int getIndex() {
+		return index;
+	}
+
+	public String toString() {
+		return name + " [" + element.getProcessDefinition() + ", " + element.getBaseElement().getId() + ", Scope: "
+				+ scopeId + ", " + chapter.name() + ", " + fieldType.getDescription() + ", " + resourceFilePath + "]";
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+		if (o instanceof ProcessVariableOperation) {
+			final ProcessVariableOperation p = (ProcessVariableOperation) o;
+			return name.equals(p.getName());
+		}
+		return false;
+	}
 }

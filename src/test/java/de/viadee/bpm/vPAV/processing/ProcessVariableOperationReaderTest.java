@@ -36,29 +36,25 @@ import com.google.common.collect.ListMultimap;
 import de.viadee.bpm.vPAV.BpmnScanner;
 import de.viadee.bpm.vPAV.FileScanner;
 import de.viadee.bpm.vPAV.RuntimeConfig;
+import de.viadee.bpm.vPAV.config.model.RuleSet;
 import de.viadee.bpm.vPAV.constants.ConfigConstants;
-import de.viadee.bpm.vPAV.processing.model.data.BpmnElement;
+import de.viadee.bpm.vPAV.processing.code.flow.BpmnElement;
+import de.viadee.bpm.vPAV.processing.code.flow.ControlFlowGraph;
+import de.viadee.bpm.vPAV.processing.code.flow.FlowAnalysis;
 import de.viadee.bpm.vPAV.processing.model.data.ProcessVariableOperation;
-import de.viadee.bpm.vPAV.processing.model.data.VariableOperation;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
-import org.camunda.bpm.model.bpmn.instance.CallActivity;
 import org.camunda.bpm.model.bpmn.instance.ServiceTask;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
 
 public class ProcessVariableOperationReaderTest {
 
@@ -73,9 +69,9 @@ public class ProcessVariableOperationReaderTest {
         final String currentPath = file.toURI().toURL().toString();
         final URL classUrl = new URL(currentPath + "src/test/java/");
         final URL resourcesUrl = new URL(currentPath + "src/test/resources/");
-        final URL[] classUrls = { classUrl, resourcesUrl };
+        final URL[] classUrls = {classUrl, resourcesUrl};
         cl = new URLClassLoader(classUrls);
-        RuntimeConfig.getInstance().setClassLoader(cl);        
+        RuntimeConfig.getInstance().setClassLoader(cl);
     }
 
     @AfterClass
@@ -84,64 +80,23 @@ public class ProcessVariableOperationReaderTest {
     }
 
     @Test
-    public void testRecogniseVariablesInClass() throws ParserConfigurationException, SAXException, IOException {
-    	final FileScanner fileScanner = new FileScanner(new HashMap<>(), ConfigConstants.TEST_JAVAPATH);
+    public void testRecogniseVariablesInClass() {
+        final FileScanner fileScanner = new FileScanner(new RuleSet());
+        fileScanner.setScanPath(ConfigConstants.TEST_JAVAPATH);
         final String PATH = BASE_PATH + "ProcessVariableReaderTest_RecogniseVariablesInClass.bpmn";
-        final JavaReaderContext jvc = new JavaReaderContext();
-        jvc.setJavaReadingStrategy(new JavaReaderRegex());
 
         // parse bpmn model
         final BpmnModelInstance modelInstance = Bpmn.readModelFromFile(new File(PATH));
 
-        final Collection<ServiceTask> allServiceTasks = modelInstance
-                .getModelElementsByType(ServiceTask.class);
+        final Collection<ServiceTask> allServiceTasks = modelInstance.getModelElementsByType(ServiceTask.class);
 
         final ProcessVariableReader variableReader = new ProcessVariableReader(null, null, new BpmnScanner(PATH));
 
-        final BpmnElement element = new BpmnElement(PATH, allServiceTasks.iterator().next());
+        final ControlFlowGraph cg = new ControlFlowGraph();
+        final BpmnElement element = new BpmnElement(PATH, allServiceTasks.iterator().next(), cg, new FlowAnalysis());
         final ListMultimap<String, ProcessVariableOperation> variables = ArrayListMultimap.create();
-        variables.putAll(variableReader.getVariablesFromElement(jvc, fileScanner, element));
+        variables.putAll(variableReader.getVariablesFromElement(fileScanner, element, cg));
 
         Assert.assertEquals(2, variables.size());
     }
-
-    @Test
-    public void testRecogniseInputOutputAssociations() throws ParserConfigurationException, SAXException, IOException {
-    	final FileScanner fileScanner = new FileScanner(new HashMap<>(), ConfigConstants.TEST_JAVAPATH);
-        final String PATH = BASE_PATH + "ProcessVariableReaderTest_InputOutputCallActivity.bpmn";
-        final JavaReaderContext jvc = new JavaReaderContext();
-        jvc.setJavaReadingStrategy(new JavaReaderRegex());
-        
-        // parse bpmn model
-        final BpmnModelInstance modelInstance = Bpmn.readModelFromFile(new File(PATH));
-
-        final Collection<CallActivity> allServiceTasks = modelInstance
-                .getModelElementsByType(CallActivity.class);
-
-        final ProcessVariableReader variableReader = new ProcessVariableReader(null, null, new BpmnScanner(PATH));
-
-        final BpmnElement element = new BpmnElement(PATH, allServiceTasks.iterator().next());
-        
-        final ListMultimap<String, ProcessVariableOperation> variables = ArrayListMultimap.create();
-        variables.putAll(variableReader.getVariablesFromElement(jvc, fileScanner, element));
-
-        final List<ProcessVariableOperation> nameOfVariableInMainProcess = variables
-                .get("nameOfVariableInMainProcess");
-        Assert.assertNotNull(nameOfVariableInMainProcess);
-        Assert.assertEquals(VariableOperation.WRITE, nameOfVariableInMainProcess.get(0).getOperation());
-
-        final List<ProcessVariableOperation> nameOfVariableInMainProcess2 = variables
-                .get("nameOfVariableInMainProcess2");
-        Assert.assertNotNull(nameOfVariableInMainProcess2);
-        Assert.assertEquals(VariableOperation.WRITE, nameOfVariableInMainProcess2.get(0).getOperation());
-
-        final List<ProcessVariableOperation> someVariableInMainProcess = variables.get("someVariableInMainProcess");
-        Assert.assertNotNull(someVariableInMainProcess);
-        Assert.assertEquals(VariableOperation.READ, someVariableInMainProcess.get(0).getOperation());
-
-        final List<ProcessVariableOperation> someVariableInMainProcess2 = variables.get("someVariableInMainProcess2");
-        Assert.assertNotNull(someVariableInMainProcess2);
-        Assert.assertEquals(VariableOperation.READ, someVariableInMainProcess2.get(0).getOperation());
-    }
 }
-

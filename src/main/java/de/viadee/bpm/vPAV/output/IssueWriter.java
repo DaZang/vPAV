@@ -33,6 +33,7 @@ package de.viadee.bpm.vPAV.output;
 
 import de.viadee.bpm.vPAV.config.model.ElementConvention;
 import de.viadee.bpm.vPAV.config.model.Rule;
+import de.viadee.bpm.vPAV.processing.code.flow.BpmnElement;
 import de.viadee.bpm.vPAV.processing.model.data.*;
 import de.viadee.bpm.vPAV.processing.model.graph.Path;
 import org.camunda.bpm.model.bpmn.impl.BpmnModelConstants;
@@ -59,9 +60,9 @@ public class IssueWriter {
 	 * @return Issues
 	 */
 	public static Collection<CheckerIssue> createIssue(final Rule rule, final CriticalityEnum classification,
-			final BpmnElement element, final String message) {
+                                                       final BpmnElement element, final String message) {
 
-		final Collection<CheckerIssue> issues = new ArrayList<CheckerIssue>();
+		final Collection<CheckerIssue> issues = new ArrayList<>();
 
 		final BaseElement baseElement = element.getBaseElement();
 
@@ -89,7 +90,7 @@ public class IssueWriter {
 	public static Collection<CheckerIssue> createIssue(final Rule rule, final String ruleDescription,
 			final CriticalityEnum classification, final ProcessVariable variable, final String message) {
 
-		final Collection<CheckerIssue> issues = new ArrayList<CheckerIssue>();
+		final Collection<CheckerIssue> issues = new ArrayList<>();
 
 		final BpmnElement element = variable.getOperations().get(0).getElement();
 
@@ -116,7 +117,7 @@ public class IssueWriter {
 	public static Collection<CheckerIssue> createIssue(final Rule rule, final CriticalityEnum classification,
 			final BpmnElement element, final String message, final String description) {
 
-		final Collection<CheckerIssue> issues = new ArrayList<CheckerIssue>();
+		final Collection<CheckerIssue> issues = new ArrayList<>();
 
 		final BaseElement baseElement = element.getBaseElement();
 
@@ -147,12 +148,12 @@ public class IssueWriter {
 			final ProcessVariableOperation var, final List<Path> paths, final AnomalyContainer anomaly,
 			final String message) {
 
-		final Collection<CheckerIssue> issues = new ArrayList<CheckerIssue>();
+		final Collection<CheckerIssue> issues = new ArrayList<>();
 
 		issues.add(new CheckerIssue(rule.getName(), rule.getRuleDescription(), classification,
 				var.getElement().getProcessDefinition(), var.getResourceFilePath(),
-				var.getElement().getBaseElement().getId(),
-				var.getElement().getBaseElement().getAttributeValue(BpmnModelConstants.BPMN_ATTRIBUTE_NAME),
+				anomaly.getElementId(),
+				anomaly.getElementName(),
 				var.getName(), anomaly.getAnomaly(), paths, message));
 
 		return issues;
@@ -175,7 +176,7 @@ public class IssueWriter {
 	public static Collection<CheckerIssue> createIssue(final Rule rule, final CriticalityEnum classification,
 			final String resourceFile, final BpmnElement element, final String message) {
 
-		final Collection<CheckerIssue> issues = new ArrayList<CheckerIssue>();
+		final Collection<CheckerIssue> issues = new ArrayList<>();
 
 		final BaseElement baseElement = element.getBaseElement();
 
