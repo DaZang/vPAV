@@ -41,13 +41,16 @@ import de.viadee.bpm.vPAV.processing.code.flow.Node;
 import de.viadee.bpm.vPAV.processing.model.data.*;
 import org.camunda.bpm.model.bpmn.impl.BpmnModelConstants;
 import soot.*;
+import soot.JastAddJ.Opt;
 import soot.jimple.toolkits.callgraph.CallGraph;
 import soot.options.Options;
 import soot.toolkits.graph.Block;
 import soot.toolkits.graph.BlockGraph;
 import soot.toolkits.graph.ClassicCompleteBlockGraph;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -59,7 +62,7 @@ class JavaReaderStatic {
 	private VariablesExtractor variablesExtractor;
 
 	JavaReaderStatic() {
-		this.setupSoot();
+		setupSoot();
 		variablesExtractor = new VariablesExtractor(this);
 	}
 
@@ -424,9 +427,13 @@ class JavaReaderStatic {
 		return className;
 	}
 
-	private void setupSoot() {
+	static void setupSoot() {
 		final String sootPath = FileScanner.getSootPath();
 		System.setProperty("soot.class.path", sootPath);
+		G.reset();
+		Options.v().set_soot_modulepath("VIRTUAL_FS_FOR_JDK");
+		Scene.v().loadBasicClasses();
+	//	Options.v().set_process_dir(Arrays.asList(applicationClassPath().split(File.pathSeparator)));
 		Options.v().set_whole_program(true);
 		Options.v().set_allow_phantom_refs(true);
 		ArrayList<String> excludedClasses = new ArrayList<>();
@@ -436,6 +443,6 @@ class JavaReaderStatic {
 		excludedClasses.add("javax.*");
 		Options.v().set_exclude(excludedClasses);
 		Options.v().set_no_bodies_for_excluded(true);
-		Scene.v().extendSootClassPath(Scene.v().defaultClassPath());
+	//	Scene.v().extendSootClassPath(Scene.v().defaultClassPath());
 	}
 }

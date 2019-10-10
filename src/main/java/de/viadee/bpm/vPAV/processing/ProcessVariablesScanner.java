@@ -90,19 +90,7 @@ public class ProcessVariablesScanner {
      *            Set of processIds (used to retrieve variable manipulation later on)
      */
     private void retrieveMethod(final String filePath, final Set<String> messageIds, final Set<String> processIds) {
-        final String sootPath = FileScanner.getSootPath();
-        System.setProperty("soot.class.path", sootPath);
-
-        Options.v().set_whole_program(true);
-        Options.v().set_allow_phantom_refs(true);
-        ArrayList<String> excludedClasses = new ArrayList<>();
-        excludedClasses.add("java.*");
-        excludedClasses.add("sun.*");
-        excludedClasses.add("jdk.*");
-        excludedClasses.add("javax.*");
-        Options.v().set_exclude(excludedClasses);
-        Options.v().set_no_bodies_for_excluded(true);
-        Scene.v().extendSootClassPath(Scene.v().defaultClassPath());
+        JavaReaderStatic.setupSoot();
 
         SootClass sootClass = Scene.v().forceResolve(cleanString(filePath, true), SootClass.SIGNATURES);
 
