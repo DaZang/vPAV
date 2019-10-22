@@ -34,6 +34,7 @@ package de.viadee.bpm.vPAV.processing;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import de.viadee.bpm.vPAV.FileScanner;
+import de.viadee.bpm.vPAV.RuntimeConfig;
 import de.viadee.bpm.vPAV.constants.BpmnConstants;
 import de.viadee.bpm.vPAV.processing.code.flow.BpmnElement;
 import de.viadee.bpm.vPAV.processing.code.flow.ControlFlowGraph;
@@ -431,18 +432,31 @@ class JavaReaderStatic {
 		final String sootPath = FileScanner.getSootPath();
 		System.setProperty("soot.class.path", sootPath);
 		G.reset();
+	/*	if(RuntimeConfig.getInstance().sootUseClasspath()){
+			Options.v().set_soot_classpath(sootPath);
+		//	Options.v().set_process_dir(Arrays.asList(System.getProperty("java.class.path").split(File.pathSeparator)));
+
+		}
+		else {
+			// Use modulepath
+		//	Options.v().set_prepend_classpath(true);
+			Options.v().set_soot_modulepath("VIRTUAL_FS_FOR_JDK");
+		//	Options.v().set_process_dir(Arrays.asList(System.getProperty("java.class.path").split(File.pathSeparator)));
+
+		} */
+		Options.v().set_prepend_classpath(true);
 		Options.v().set_soot_modulepath("VIRTUAL_FS_FOR_JDK");
-		Scene.v().loadBasicClasses();
-	//	Options.v().set_process_dir(Arrays.asList(applicationClassPath().split(File.pathSeparator)));
+		Options.v().set_process_dir(Arrays.asList(System.getProperty("java.class.path").split(File.pathSeparator)));
+
 		Options.v().set_whole_program(true);
 		Options.v().set_allow_phantom_refs(true);
-		ArrayList<String> excludedClasses = new ArrayList<>();
+	/*	ArrayList<String> excludedClasses = new ArrayList<>();
 		excludedClasses.add("java.*");
 		excludedClasses.add("sun.*");
 		excludedClasses.add("jdk.*");
 		excludedClasses.add("javax.*");
 		Options.v().set_exclude(excludedClasses);
-		Options.v().set_no_bodies_for_excluded(true);
+		Options.v().set_no_bodies_for_excluded(true); */
 	//	Scene.v().extendSootClassPath(Scene.v().defaultClassPath());
 	}
 }

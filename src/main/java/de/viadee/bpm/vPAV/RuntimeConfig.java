@@ -197,4 +197,7 @@ public class RuntimeConfig {
         this.resourceBundle = resourceBundle;
     }
 
+    public boolean sootUseClasspath() {
+        return false;
+    }
 }
