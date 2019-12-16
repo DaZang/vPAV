@@ -40,10 +40,10 @@ public class TechnicalDelegate implements JavaDelegate {
     @Override
     public void execute(final DelegateExecution execution) throws Exception {
 
+        // Two processContext objects because vPAV should correctly include "var" as process variable and not "var2"
         ProcessContext processContext = new ProcessContext(execution, "var");
+        ProcessContext processContext2 = new ProcessContext(execution, "var2");
         String name = processContext.getTechnicalProcessContext().manipulateVariables();
         String var = (String) execution.getVariable(name);
-
     }
-
 }

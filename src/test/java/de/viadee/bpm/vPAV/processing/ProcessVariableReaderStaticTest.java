@@ -173,7 +173,11 @@ public class ProcessVariableReaderStaticTest {
 		final ListMultimap<String, ProcessVariableOperation> variables = ArrayListMultimap.create();
 		variables.putAll(new JavaReaderStatic().getVariablesFromJavaDelegate(fileScanner,
 				"de.viadee.bpm.vPAV.delegates.TechnicalDelegate", element, null, null, null, new AnalysisElement[1]));
-		assertEquals(2, variables.values().size());
+		assertEquals(2, variables.get("var").size());
+	}
+
+	public void followStaticMethodInvocation() {
+
 	}
 
 	@Test

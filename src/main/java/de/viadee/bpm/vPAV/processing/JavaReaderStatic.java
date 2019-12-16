@@ -180,7 +180,7 @@ public class JavaReaderStatic {
 
         variablesExtractor.resetMethodStackTrace();
         classFetcherRecursive(classPaths, className, methodName, classFile, element, chapter, fieldType, scopeId,
-                outSet, null, "", args,null, predecessor);
+                outSet, null, "", args,null, predecessor, null);
 
         if (outSet.getAllProcessVariables().size() > 0) {
             processVariables.putAll(outSet.getAllProcessVariables());
@@ -263,7 +263,7 @@ public class JavaReaderStatic {
             final String classFile, final BpmnElement element, final ElementChapter chapter,
             final KnownElementFieldType fieldType, final String scopeId, OutSetCFG outSet,
             final VariableBlock originalBlock, final String assignmentStmt, final List<Value> args,
-            SootMethod sootMethod, final AnalysisElement[] predecessor) {
+            SootMethod sootMethod, final AnalysisElement[] predecessor, final Value calledObject) {
 
         SootClass sootClass = setupSootClass(className);
 
@@ -299,7 +299,7 @@ public class JavaReaderStatic {
                             outSet = blockIterator(classPaths, Scene.v().getCallGraph(), graph, block, outSet, element,
                                     chapter,
                                     fieldType, classFile, scopeId,
-                                    originalBlock, assignmentStmt, args, predecessor);
+                                    originalBlock, assignmentStmt, args, predecessor, calledObject);
                         }
                         variablesExtractor.leaveMethod(method);
                     }
@@ -357,11 +357,11 @@ public class JavaReaderStatic {
             OutSetCFG outSet, final BpmnElement element, final ElementChapter chapter,
             final KnownElementFieldType fieldType, final String filePath, final String scopeId,
             VariableBlock originalBlock, final String assignmentStmt, final List<Value> args,
-            final AnalysisElement[] predecessor) {
+            final AnalysisElement[] predecessor, final Value calledObject) {
         // Collect the functions Unit by Unit via the blockIterator
         final VariableBlock vb = variablesExtractor
                 .blockIterator(classPaths, cg, block, outSet, element, chapter, fieldType, filePath,
-                        scopeId, originalBlock, assignmentStmt, args, predecessor);
+                        scopeId, originalBlock, assignmentStmt, args, predecessor, calledObject);
 
         // depending if outset already has that Block, only add variables,
         // if not, then add the whole vb

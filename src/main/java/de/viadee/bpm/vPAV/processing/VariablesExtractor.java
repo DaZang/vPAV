@@ -58,6 +58,8 @@ import soot.toolkits.graph.Block;
 class VariablesExtractor {
 
     private List<Value> constructorArgs;
+    // Constructor parameters for all constructors that are called
+    private HashMap<Value, List<Value>> newConstructorArgs;
 
     private JavaReaderStatic javaReaderStatic;
 
@@ -71,6 +73,7 @@ class VariablesExtractor {
         this.javaReaderStatic = reader;
         this.methodStackTrace = new HashMap<>();
         this.processedBlocks = new HashSet<>();
+        this.newConstructorArgs = new HashMap<>();
     }
 
     /**
@@ -190,7 +193,7 @@ class VariablesExtractor {
             final OutSetCFG outSet, final BpmnElement element, final ElementChapter chapter,
             final KnownElementFieldType fieldType, final String filePath, final String scopeId,
             VariableBlock variableBlock, String assignmentStmt, final List<Value> args,
-            final AnalysisElement[] predecessor) {
+            final AnalysisElement[] predecessor, final Value calledObject) {
         if (variableBlock == null) {
             variableBlock = new VariableBlock(block, new ArrayList<>());
         }
@@ -286,7 +289,8 @@ class VariablesExtractor {
                         // Split node
                         Node newSectionNode = (Node) node.clone();
                         checkInterProceduralCall(classPaths, cg, outSet, element, chapter, fieldType, scopeId,
-                                variableBlock, unit, assignmentStmt, expr.getArgs(), false, predecessor);
+                                variableBlock, unit, assignmentStmt, expr.getArgs(), false, predecessor, expr.getBase());
+                         //       expr.getBase());
                         paramName = returnStmt;
                         node = newSectionNode;
                         nodeSaved = false;
@@ -296,7 +300,7 @@ class VariablesExtractor {
                     }
                 }
                 // Method call of implemented interface method with assignment to a variable
-                if (((AssignStmt) unit).getRightOpBox().getValue() instanceof JInterfaceInvokeExpr) {
+                else if (((AssignStmt) unit).getRightOpBox().getValue() instanceof JInterfaceInvokeExpr) {
                     JInterfaceInvokeExpr expr = (JInterfaceInvokeExpr) ((AssignStmt) unit).getRightOpBox().getValue();
                     if (expr != null) {
                         parseExpression(expr, variableBlock, element, chapter, fieldType, filePath, scopeId, paramName,
@@ -304,7 +308,7 @@ class VariablesExtractor {
                     }
                 }
                 // Instance fields
-                if (((AssignStmt) unit).getRightOpBox().getValue() instanceof JInstanceFieldRef) {
+                else if (((AssignStmt) unit).getRightOpBox().getValue() instanceof JInstanceFieldRef) {
                     final Pattern pattern = Pattern.compile("(\\$r(\\d))");
                     String argument = ((AssignStmt) unit).getLeftOpBox().getValue().toString();
                     Matcher matcher = pattern.matcher(argument);
@@ -312,13 +316,25 @@ class VariablesExtractor {
                         if (instanceFieldRef > Integer.parseInt(matcher.group(2))) {
                             instanceFieldRef = Integer.parseInt(matcher.group(2));
                             assignmentStmt = argument;
-                            if (this.getConstructorArgs() != null && !this.getConstructorArgs().isEmpty()) {
+                            // TODO check what this does and for what it is needed
+                            List<Value> objectArgs = this.newConstructorArgs.get(calledObject);
+                            if (objectArgs != null && !objectArgs.isEmpty()) {
                                 argsCounter++;
-                                paramName = this.getConstructorArgs().get(argsCounter - 1).toString();
+                                paramName = objectArgs.get(argsCounter - 1).toString();
                             }
                         } else {
                             assignmentStmt = argument;
                         }
+                    }
+                }
+                // Simple assignment
+                else if (((AssignStmt) unit).getRightOpBox().getValue() instanceof JimpleLocal) {
+                    // Check if constructor object is mapped to "real" object after initialization
+                    List<Value> objectArgs = newConstructorArgs.get(((AssignStmt) unit).getRightOpBox().getValue());
+                    if(objectArgs != null) {
+                        // Replace by real object reference
+                        newConstructorArgs.put(((AssignStmt) unit).getLeftOpBox().getValue(), objectArgs);
+                        newConstructorArgs.remove(((AssignStmt) unit).getRightOpBox().getValue());
                     }
                 }
             }
@@ -338,7 +354,7 @@ class VariablesExtractor {
                 // Collect the functions Unit by Unit via the blockIterator
                 final VariableBlock vb2 = this
                         .blockIterator(classPaths, cg, succ, outSet, element, chapter, fieldType, filePath,
-                                scopeId, null, assignmentStmt, args, newPredecessor);
+                                scopeId, null, assignmentStmt, args, newPredecessor, calledObject);
 
                 // depending if outset already has that Block, only add variables,
                 // if not, then add the whole vb
@@ -525,18 +541,18 @@ class VariablesExtractor {
             JVirtualInvokeExpr expr = (JVirtualInvokeExpr) ((InvokeStmt) unit).getInvokeExprBox().getValue();
             checkInterProceduralCall(classPaths, cg, outSet, element, chapter, fieldType, scopeId, variableBlock,
                     unit,
-                    assignmentStmt, expr.getArgs(), true, predecessor);
+                    assignmentStmt, expr.getArgs(), true, predecessor, null);
         }
         // Constructor call
         else if (((InvokeStmt) unit).getInvokeExprBox().getValue() instanceof JSpecialInvokeExpr) {
             JSpecialInvokeExpr expr = (JSpecialInvokeExpr) ((InvokeStmt) unit).getInvokeExprBox().getValue();
             if (((InvokeStmt) unit).getInvokeExprBox().getValue().toString().contains("void <init>")) {
-                this.setConstructorArgs(expr.getArgs());
+                newConstructorArgs.put(expr.getBase(), expr.getArgs());
                 assignmentStmt = expr.getBaseBox().getValue().toString();
             } else {
                 checkInterProceduralCall(classPaths, cg, outSet, element, chapter, fieldType, scopeId,
                         variableBlock,
-                        unit, assignmentStmt, expr.getArgs(), true, predecessor);
+                        unit, assignmentStmt, expr.getArgs(), true, predecessor, null);
             }
         }
         return assignmentStmt;
@@ -544,7 +560,6 @@ class VariablesExtractor {
 
     private List<Value> getConstructorArgs() {
         return constructorArgs;
-
     }
 
     /**
@@ -563,7 +578,7 @@ class VariablesExtractor {
     private void checkInterProceduralCall(final Set<String> classPaths, final CallGraph cg, final OutSetCFG outSet,
             final BpmnElement element, final ElementChapter chapter, final KnownElementFieldType fieldType,
             final String scopeId, final VariableBlock variableBlock, final Unit unit, final String assignmentStmt,
-            final List<Value> args, final boolean isInvoke, AnalysisElement[] predecessor) {
+            final List<Value> args, final boolean isInvoke, AnalysisElement[] predecessor, final Value calledObject) {
 
         final ControlFlowGraph controlFlowGraph = element.getControlFlowGraph();
         final Iterator<Edge> sources = cg.edgesOutOf(unit);
@@ -590,16 +605,12 @@ class VariablesExtractor {
 
                 javaReaderStatic.classFetcherRecursive(classPaths, className, methodName, className, element, chapter,
                         fieldType,
-                        scopeId, outSet, variableBlock, assignmentStmt, args, sootMethod, predecessor);
+                        scopeId, outSet, variableBlock, assignmentStmt, args, sootMethod, predecessor, calledObject);
                 controlFlowGraph.removePriorLevel();
                 controlFlowGraph.decrementRecursionCounter();
                 controlFlowGraph.setInternalNodeCounter(controlFlowGraph.getPriorLevel());
             }
         }
-    }
-
-    private void setConstructorArgs(final List<Value> args) {
-        this.constructorArgs = args;
     }
 
     private void setReturnStmt(final String returnStmt) {
