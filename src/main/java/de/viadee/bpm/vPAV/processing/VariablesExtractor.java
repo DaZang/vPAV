@@ -1,23 +1,23 @@
 /**
  * BSD 3-Clause License
- *
+ * <p>
  * Copyright © 2019, viadee Unternehmensberatung AG
  * All rights reserved.
- *
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * <p>
  * * Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
- *
+ * list of conditions and the following disclaimer.
+ * <p>
  * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
- *   and/or other materials provided with the distribution.
- *
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * <p>
  * * Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from
- *   this software without specific prior written permission.
- *
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -57,9 +57,8 @@ import soot.toolkits.graph.Block;
 
 class VariablesExtractor {
 
-    private List<Value> constructorArgs;
     // Constructor parameters for all constructors that are called
-    private HashMap<Value, List<Value>> newConstructorArgs;
+    private HashMap<Value, List<Value>> constructorArgs;
 
     private JavaReaderStatic javaReaderStatic;
 
@@ -73,7 +72,7 @@ class VariablesExtractor {
         this.javaReaderStatic = reader;
         this.methodStackTrace = new HashMap<>();
         this.processedBlocks = new HashSet<>();
-        this.newConstructorArgs = new HashMap<>();
+        this.constructorArgs = new HashMap<>();
     }
 
     /**
@@ -242,14 +241,15 @@ class VariablesExtractor {
                     InvokeExpr calledMethod = (InvokeExpr) ((InvokeStmt) unit).getInvokeExprBox().getValue();
                     for (Type parameter : calledMethod.getMethodRef().getParameterTypes()) {
                         try {
-                        if (parameter instanceof RefType) {
-                            if (((RefType) parameter).getClassName()
-                                    .equals("org.camunda.bpm.engine.delegate.DelegateExecution")) {
-                                passesDelegateExecution = true;
-                                break;
+                            if (parameter instanceof RefType) {
+                                if (((RefType) parameter).getClassName()
+                                        .equals("org.camunda.bpm.engine.delegate.DelegateExecution")) {
+                                    passesDelegateExecution = true;
+                                    break;
+                                }
                             }
+                        } catch (ClassCastException ignored) {
                         }
-                        } catch (ClassCastException ignored) { }
                     }
                     if (passesDelegateExecution) {
                         // Node must be splitted
@@ -262,7 +262,7 @@ class VariablesExtractor {
                         assignmentStmt = processInvokeStmt(classPaths, cg, outSet, element, chapter, fieldType,
                                 filePath,
                                 scopeId, variableBlock, assignmentStmt, node, paramName, argsCounter,
-                                unit, predecessor);
+                                unit, predecessor, calledObject);
                         paramName = returnStmt;
                         node = newSectionNode;
                         nodeSaved = false;
@@ -270,7 +270,7 @@ class VariablesExtractor {
                         assignmentStmt = processInvokeStmt(classPaths, cg, outSet, element, chapter, fieldType,
                                 filePath,
                                 scopeId, variableBlock, assignmentStmt, node, paramName, argsCounter,
-                                unit, predecessor);
+                                unit, predecessor, calledObject);
                     }
                 } catch (CloneNotSupportedException e) {
                     e.printStackTrace();
@@ -289,8 +289,9 @@ class VariablesExtractor {
                         // Split node
                         Node newSectionNode = (Node) node.clone();
                         checkInterProceduralCall(classPaths, cg, outSet, element, chapter, fieldType, scopeId,
-                                variableBlock, unit, assignmentStmt, expr.getArgs(), false, predecessor, expr.getBase());
-                         //       expr.getBase());
+                                variableBlock, unit, assignmentStmt, expr.getArgs(), false, predecessor,
+                                expr.getBase());
+                        //       expr.getBase());
                         paramName = returnStmt;
                         node = newSectionNode;
                         nodeSaved = false;
@@ -317,7 +318,7 @@ class VariablesExtractor {
                             instanceFieldRef = Integer.parseInt(matcher.group(2));
                             assignmentStmt = argument;
                             // TODO check what this does and for what it is needed
-                            List<Value> objectArgs = this.newConstructorArgs.get(calledObject);
+                            List<Value> objectArgs = this.constructorArgs.get(calledObject);
                             if (objectArgs != null && !objectArgs.isEmpty()) {
                                 argsCounter++;
                                 paramName = objectArgs.get(argsCounter - 1).toString();
@@ -330,11 +331,11 @@ class VariablesExtractor {
                 // Simple assignment
                 else if (((AssignStmt) unit).getRightOpBox().getValue() instanceof JimpleLocal) {
                     // Check if constructor object is mapped to "real" object after initialization
-                    List<Value> objectArgs = newConstructorArgs.get(((AssignStmt) unit).getRightOpBox().getValue());
-                    if(objectArgs != null) {
+                    List<Value> objectArgs = constructorArgs.get(((AssignStmt) unit).getRightOpBox().getValue());
+                    if (objectArgs != null) {
                         // Replace by real object reference
-                        newConstructorArgs.put(((AssignStmt) unit).getLeftOpBox().getValue(), objectArgs);
-                        newConstructorArgs.remove(((AssignStmt) unit).getRightOpBox().getValue());
+                        constructorArgs.put(((AssignStmt) unit).getLeftOpBox().getValue(), objectArgs);
+                        constructorArgs.remove(((AssignStmt) unit).getRightOpBox().getValue());
                     }
                 }
             }
@@ -378,7 +379,7 @@ class VariablesExtractor {
                     // is does not contain any operations
                     // The successors of the successor have to be found and added
                     // TODO add test case
-                    if(element.getControlFlowGraph().getNodes().size() > 0) {
+                    if (element.getControlFlowGraph().getNodes().size() > 0) {
                         addPredecessorToSuccessors(succ, predecessor[0], element);
                     }
                 } else {
@@ -522,14 +523,14 @@ class VariablesExtractor {
             final BpmnElement element, final ElementChapter chapter, final KnownElementFieldType fieldType,
             final String filePath, final String scopeId, final VariableBlock variableBlock, String assignmentStmt,
             final Node node, final String paramName, final int argsCounter,
-            final Unit unit, final AnalysisElement[] predecessor) {
+            final Unit unit, final AnalysisElement[] predecessor, final Value calledObject) {
         // Method call of implemented interface method without prior assignment
         if (((InvokeStmt) unit).getInvokeExprBox().getValue() instanceof JInterfaceInvokeExpr) {
             JInterfaceInvokeExpr expr = (JInterfaceInvokeExpr) ((InvokeStmt) unit).getInvokeExprBox().getValue();
             if (expr != null) {
                 if (argsCounter > 0) {
                     parseExpression(expr, variableBlock, element, chapter, fieldType, filePath, scopeId,
-                            this.getConstructorArgs().get(argsCounter - 1).toString(), node);
+                            this.constructorArgs.get(calledObject).get(argsCounter - 1).toString(), node);
                 } else {
                     parseExpression(expr, variableBlock, element, chapter, fieldType, filePath, scopeId, paramName,
                             node);
@@ -541,25 +542,25 @@ class VariablesExtractor {
             JVirtualInvokeExpr expr = (JVirtualInvokeExpr) ((InvokeStmt) unit).getInvokeExprBox().getValue();
             checkInterProceduralCall(classPaths, cg, outSet, element, chapter, fieldType, scopeId, variableBlock,
                     unit,
-                    assignmentStmt, expr.getArgs(), true, predecessor, null);
+                    assignmentStmt, expr.getArgs(), true, predecessor, calledObject);
         }
         // Constructor call
         else if (((InvokeStmt) unit).getInvokeExprBox().getValue() instanceof JSpecialInvokeExpr) {
             JSpecialInvokeExpr expr = (JSpecialInvokeExpr) ((InvokeStmt) unit).getInvokeExprBox().getValue();
+            // TODO do we really nead the constructor args?
             if (((InvokeStmt) unit).getInvokeExprBox().getValue().toString().contains("void <init>")) {
-                newConstructorArgs.put(expr.getBase(), expr.getArgs());
+                if(expr.getArgs().size() > 0 ) {
+                    constructorArgs.put(expr.getBase(), expr.getArgs());
+                }
+
                 assignmentStmt = expr.getBaseBox().getValue().toString();
-            } else {
-                checkInterProceduralCall(classPaths, cg, outSet, element, chapter, fieldType, scopeId,
-                        variableBlock,
-                        unit, assignmentStmt, expr.getArgs(), true, predecessor, null);
             }
+            checkInterProceduralCall(classPaths, cg, outSet, element, chapter, fieldType, scopeId,
+                    variableBlock,
+                    unit, assignmentStmt, expr.getArgs(), true, predecessor, calledObject);
+
         }
         return assignmentStmt;
-    }
-
-    private List<Value> getConstructorArgs() {
-        return constructorArgs;
     }
 
     /**
